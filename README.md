@@ -200,3 +200,38 @@ int main() {
     blockchain.displayChain();
     return 0;
 }
+#include <iostream>
+#include <cstdlib>
+#include <thread>
+#include <chrono>
+
+void displayExitPopup() {
+    // Displaying the exit popup with MIT License and Credits
+    std::cout << "\n\n--- Exit Acknowledgment ---\n";
+    std::cout << "MIT License\n";
+    std::cout << "Copyright (c) 2025 EL-40 Blockchain\n";
+    std::cout << "Special thanks to GPT Chat for assistance in the development.\n";
+    std::cout << "This software is provided 'as-is' without any express or implied warranty.\n";
+    std::cout << "For more information, visit: https://opensource.org/licenses/MIT\n";
+    std::cout << "Email: elindau85@gmail.com\n";
+    std::cout << "By: EL (El-40 Blockchain)\n";
+    std::cout << "--- End of License ---\n";
+
+    // A simulated DDoS protection message (in real cases, you would integrate DDoS mechanisms, this is just an illustration)
+    std::cout << "\nDDoS Protection Enabled: Network safety is ensured during this operation.\n";
+}
+
+int main() {
+    std::cout << "Welcome to the EL-40 Blockchain Program.\n";
+
+    // Simulate program work for demonstration (replace with your actual logic)
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+
+    // Call the exit popup before exiting
+    displayExitPopup();
+
+    // You can add additional actions here for logging or more security measures if needed
+    // Exit the program
+    std::cout << "Exiting program...\n";
+    return 0;
+}
