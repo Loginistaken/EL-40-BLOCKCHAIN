@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <crypto++/sha3.h>  // SHA-3 header from Crypto++ library
 #include <crypto++/hex.h>    // Hex encoding (to display the hash)
+#include <mutex>
 
 // Custom Hash Function (SHA-3)
 std::string EL40_Hash(const std::string& input) {
@@ -79,6 +80,7 @@ class EL40_Blockchain {
 private:
     std::vector<Block> chain;
     std::unordered_map<std::string, std::string> transactionLedger; // External tracking
+    std::mutex chainMutex; // Mutex for thread safety
 
 public:
     EL40_Blockchain() {
@@ -90,6 +92,7 @@ public:
     }
 
     void addBlock(const std::string& data) {
+        std::lock_guard<std::mutex> lock(chainMutex); // Ensure thread safety
         if (approveBlockAI(data)) { // AI approval process
             Block last = chain.back();
             Block newBlock(chain.size(), data, last.hash);
@@ -108,6 +111,7 @@ public:
     }
 
     void displayChain() const {
+        std::lock_guard<std::mutex> lock(chainMutex); // Ensure thread safety
         for (const auto& block : chain) {
             std::cout << "Index: " << block.index << "\n"
                       << "Time: " << block.timestamp << "\n"
@@ -148,11 +152,11 @@ bool nodeAccessAgreement() {
 void startServer(unsigned short port) {
     try {
         asio::io_context io_context;
-        tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), port));
+        asio::ip::tcp::acceptor acceptor(io_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port));
         std::cout << "Server started on port " << port << "\n";
 
         for (;;) {
-            tcp::socket socket(io_context);
+            asio::ip::tcp::socket socket(io_context);
             acceptor.accept(socket);
             std::cout << "New node connected!\n";
         }
@@ -161,49 +165,10 @@ void startServer(unsigned short port) {
     }
 }
 
-int main() {
-    std::cout << "\nWelcome to EL-40 Blockchain!";
-    if (!nodeAccessAgreement()) {
-        return 0;
-    }
-
-    EL40_Blockchain myChain;
-    myChain.addBlock("First Secure Block");
-    myChain.addBlock("Second Secure Block");
-    myChain.displayChain();
-
-    // Fetch external transactions
-    myChain.fetchExternalTransactions();
-
-    // Start P2P server in a separate thread
-    std::thread serverThread(startServer, 8080);
-    serverThread.detach();
-
-    return 0;
-}
-
 // Simulate node network with multithreading (each thread represents a node)
 void runNode(EL40_Blockchain& blockchain, const std::string& blockData) {
     blockchain.addBlock(blockData);
 }
-
-int main() {
-    EL40_Blockchain blockchain;
-
-    // Simulate multiple nodes mining and communicating
-    std::thread node1(runNode, std::ref(blockchain), "Node 1 Block Data");
-    std::thread node2(runNode, std::ref(blockchain), "Node 2 Block Data");
-
-    node1.join();
-    node2.join();
-
-    blockchain.displayChain();
-    return 0;
-}
-#include <iostream>
-#include <cstdlib>
-#include <thread>
-#include <chrono>
 
 void displayExitPopup() {
     // Displaying the exit popup with MIT License and Credits
@@ -224,14 +189,34 @@ void displayExitPopup() {
 int main() {
     std::cout << "Welcome to the EL-40 Blockchain Program.\n";
 
+    if (!nodeAccessAgreement()) {
+        return 0;
+    }
+
+    EL40_Blockchain blockchain;
+
+    // Simulate multiple nodes mining and communicating
+    std::thread node1(runNode, std::ref(blockchain), "Node 1 Block Data");
+    std::thread node2(runNode, std::ref(blockchain), "Node 2 Block Data");
+
+    node1.join();
+    node2.join();
+
+    blockchain.displayChain();
+
+    // Fetch external transactions
+    blockchain.fetchExternalTransactions();
+
+    // Start P2P server in a separate thread
+    std::thread serverThread(startServer, 8080);
+    serverThread.detach();
+
     // Simulate program work for demonstration (replace with your actual logic)
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
     // Call the exit popup before exiting
     displayExitPopup();
 
-    // You can add additional actions here for logging or more security measures if needed
-    // Exit the program
     std::cout << "Exiting program...\n";
     return 0;
 }
