@@ -62,13 +62,18 @@ bool verifyTransaction(const std::string& data, const std::string& signature, co
     CryptoPP::RSASSA_PKCS1v15_SHA_Verifier verifier(publicKey);
     bool result = false;
 
-    CryptoPP::StringSource ss(signature + data, true,
-        new CryptoPP::SignatureVerificationFilter(
-            verifier,
-            new CryptoPP::ArraySink((byte*)&result, sizeof(result)),
-            CryptoPP::SignatureVerificationFilter::THROW_EXCEPTION | CryptoPP::SignatureVerificationFilter::PUT_RESULT
-        )
-    );
+    try {
+        CryptoPP::StringSource ss(signature + data, true,
+            new CryptoPP::SignatureVerificationFilter(
+                verifier,
+                new CryptoPP::ArraySink((byte*)&result, sizeof(result)),
+                CryptoPP::SignatureVerificationFilter::THROW_EXCEPTION | CryptoPP::SignatureVerificationFilter::PUT_RESULT
+            )
+        );
+    } catch (const CryptoPP::Exception& e) {
+        std::cerr << "Error verifying transaction: " << e.what() << '\n';
+        return false;
+    }
     return result;
 }
 
@@ -148,6 +153,34 @@ public:
         }
     }
 
+    void addBlock(const std::vector<Transaction>& transactions, const std::string& minerAddress = "MinerNode") {
+        std::lock_guard<std::mutex> lock(chainMutex);
+        if (approveBlockAI(transactionsToString(transactions))) {
+            Block last = chain.back();
+
+            std::vector<Transaction> blockTxs = transactions;
+
+            // Add block reward
+            Transaction rewardTx = {"Network", minerAddress, 25.0, "Reward"};  // Example block reward
+            blockTxs.push_back(rewardTx);
+
+            Block newBlock(chain.size(), blockTxs, last.hash);
+
+            int difficulty = adjustDifficulty(chain.size());
+            newBlock.mineBlock(difficulty);
+
+            chain.push_back(newBlock);
+            for (const auto& tx : blockTxs) {
+                ledger[tx.sender] -= tx.amount;
+                ledger[tx.receiver] += tx.amount;
+            }
+
+            std::cout << "[+] Block added by " << minerAddress << " with reward 25.0 ELX\n";
+        } else {
+            std::cout << "Block rejected by AI approval process.\n";
+        }
+    }
+
     void displayChain() const {
         std::lock_guard<std::mutex> lock(chainMutex);
         for (const auto& block : chain) {
@@ -217,7 +250,7 @@ void startServer(unsigned short port) {
             std::cout << "New node connected!\n";
             std::thread(handleClient, std::move(socket)).detach();
         }
-    } catch (std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << "Server Error: " << e.what() << "\n";
     }
 }
@@ -231,7 +264,7 @@ void handleClient(asio::ip::tcp::socket socket) {
         std::string message;
         std::getline(input, message);
         std::cout << "Received message: " << message << "\n";
-    } catch (std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << "Client Error: " << e.what() << "\n";
     }
 }
