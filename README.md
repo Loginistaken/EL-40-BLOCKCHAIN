@@ -292,7 +292,6 @@ void displayExitPopup() {
     std::cout << "--- End of License ---\n";
     std::cout << "\nDDoS Protection Enabled: Network safety is ensured during this operation.\n";
 }
-
 int main() {
     try {
         std::cout << "Welcome to the EL-40 Blockchain Program.\n";
