@@ -196,6 +196,13 @@ public:
         }
     }
 
+    // Metaverse integration example
+    void integrateWithMetaverse(const std::string& metaverseAddress) {
+        std::lock_guard<std::mutex> lock(chainMutex);
+        std::cout << "[+] Integrating blockchain with Metaverse at address: " << metaverseAddress << "\n";
+        // Placeholder for actual integration logic
+    }
+
 private:
     std::string transactionsToString(const std::vector<Transaction>& transactions) const {
         std::string result;
@@ -303,6 +310,9 @@ int main() {
         node2.join();
 
         blockchain.displayChain();
+
+        // Example integration with Metaverse
+        blockchain.integrateWithMetaverse("https://metaverse.example.com");
 
         std::thread serverThread(startServer, 8080);
         serverThread.detach();
